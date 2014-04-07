@@ -15,23 +15,27 @@ namespace Tests
 
         public ReleaseItemExclusive_when_lock_id_does_not_match()
         {
+            PersistedSessionStateDocument = PreExistingSessionStateDocument.ShallowCopy();
             //call ReleaseItemExclusive with a lockId that does not match
            Subject.ReleaseItemExclusive(null, SessionId, 3); 
 
-            using (var session = DocumentStore.OpenSession())
+            using (var session = MockDocumentStore.Object.OpenSession())
             {
                 PersistedSessionStateDocument = session.Load<SessionStateDocument>(SessionStateDocument.GenerateDocumentId(SessionId, ApplicationName));
             }
         }
 
-        protected override SessionStateDocument PreExistingSessionState()
+        protected override SessionStateDocument PreExistingSessionStateDocument
         {
-            return new SessionStateDocument(SessionId, ApplicationName)
+            get
+            {
+                return new SessionStateDocument(SessionId, ApplicationName)
                 {
                     Locked = true,
                     LockId = LockIdExisting,
                     Expiry = ExpiryExisting
                 };
+            }
         }
 
 

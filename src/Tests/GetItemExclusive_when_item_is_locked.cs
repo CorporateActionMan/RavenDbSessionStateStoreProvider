@@ -5,9 +5,10 @@ using Xunit;
 
 namespace Tests
 {
+    using Moq;
+
     public class GetItemExclusive_when_item_is_locked : GetItemExclusiveTest
     {
-
         protected int LockIdExisting {get { return 66; }}
         protected DateTime LockDate = DateTime.UtcNow.AddMinutes(-1);
 
@@ -16,16 +17,20 @@ namespace Tests
             get { return "IEXIST"; }
         }
 
-        protected override SessionStateDocument PreExistingSessionState()
+        protected override SessionStateDocument PreExistingSessionStateDocument
         {
-            return new SessionStateDocument(SessionId, ApplicationName)
+            get
+            {
+                return new SessionStateDocument(SessionId, ApplicationName)
                 {
                     Locked = true,
                     LockId = LockIdExisting,
                     LockDate = LockDate,
                     Expiry = DateTime.UtcNow.AddMinutes(10)
                 };
+            }
         }
+
 
         [Fact]
         public void returns_null()

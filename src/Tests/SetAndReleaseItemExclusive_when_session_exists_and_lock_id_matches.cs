@@ -5,8 +5,14 @@ using Xunit;
 
 namespace Tests
 {
+    using Moq;
+    using Raven.Json.Linq;
+
     public class SetAndReleaseItemExclusive_when_session_exists_and_lock_id_matches : SetAndReleaseItemExclusiveTest
     {
+        public SetAndReleaseItemExclusive_when_session_exists_and_lock_id_matches()
+        {
+        }
 
         protected override string SessionId
         {
@@ -34,18 +40,21 @@ namespace Tests
             }
         }
 
-        protected override SessionStateDocument PreExistingSessionState()
+        protected override SessionStateDocument PreExistingSessionStateDocument
         {
-            var items = new SessionStateItemCollection();
-            items["Name"] = "Roger Ramjet";
+            get
+            {
+                var items = new SessionStateItemCollection();
+                items["Name"] = "Roger Ramjet";
 
-            return new SessionStateDocument(SessionId, ApplicationName)
+                return new SessionStateDocument(SessionId, ApplicationName)
                 {
                     Locked = true,
                     LockId = LockId,
                     SessionItems = Subject.Serialize(items),
                     Expiry = DateTime.UtcNow.AddMinutes(1)
-                }; 
+                };
+            }
         }
 
         [Fact]

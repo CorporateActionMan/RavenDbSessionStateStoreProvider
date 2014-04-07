@@ -5,11 +5,13 @@ using Raven.AspNet.SessionState;
 
 namespace Tests
 {
+    using Moq;
+    using Raven.Client;
+
     public abstract class GetItemExclusiveTest : RavenSessionStateTest
     {
         protected GetItemExclusiveTest()
         {
-
             bool locked;
             TimeSpan lockAge;
             object lockId;

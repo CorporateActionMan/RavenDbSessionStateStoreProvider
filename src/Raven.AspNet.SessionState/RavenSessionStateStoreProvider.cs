@@ -1,42 +1,65 @@
-﻿using System;
-using System.Configuration;
-using System.IO;
-using System.Linq;
-using System.Web;
-using System.Web.Configuration;
-using System.Web.SessionState;
-using NLog;
-using Raven.Abstractions.Exceptions;
-using Raven.AspNet.SessionState.Infrastructure;
-using Raven.Client;
-using Raven.Client.Document;
-using Raven.Json.Linq;
+﻿
 
 namespace Raven.AspNet.SessionState
 {
+    using System;
+    using System.Collections.Specialized;
+    using System.Configuration;
+    using System.IO;
+    using System.Linq;
+    using System.Web;
+    using System.Web.Configuration;
+    using System.Web.SessionState;
+    using Interfaces;
+    using NLog;
+    using Providers;
+    using Abstractions.Exceptions;
+    using Infrastructure;
+    using Client;
+    using Client.Document;
+    using Json.Linq;
+
     /// <summary>
     /// An ASP.NET session-state store-provider implementation (http://msdn.microsoft.com/en-us/library/ms178588.aspx) using 
     /// RavenDb (http://ravendb.net) for persistence.
     /// </summary>
     public class RavenSessionStateStoreProvider : SessionStateStoreProviderBase, IDisposable
     {
-
-        private IDocumentStore _documentStore;
-        private SessionStateSection _sessionStateConfig;
+        private NameValueCollection configuration;
+        private IDocumentStore documentStore;
+        private IHostingProvider hostingProvider;
+        private SessionStateSection sessionStateConfig;
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
         /// Public parameterless constructor
         /// </summary>
         public RavenSessionStateStoreProvider()
-        {}
+        {
+            HostingProvider = new CustomHostingProvider();
+        }
 
         /// <summary>
         /// Constructor accepting a document store instance, used for testing.
         /// </summary>
         public RavenSessionStateStoreProvider(IDocumentStore documentStore)
+            : this()
         {
-            _documentStore = documentStore;
+            CheckValidDocumentStoreParameter(documentStore);
+            this.documentStore = documentStore;
+        }
+
+        private void CheckValidDocumentStoreParameter(IDocumentStore docStore)
+        {
+            if (docStore == null)
+            {
+                throw new ArgumentNullException("docStore", "docStore cannot be null");
+            }
+        }
+
+        public IDocumentStore DocumentStore
+        {
+            get { return documentStore; }
         }
 
         /// <summary>
@@ -48,52 +71,45 @@ namespace Raven.AspNet.SessionState
 
         internal SessionStateSection SessionStateConfig
         {
-            get { return _sessionStateConfig ?? (_sessionStateConfig = (SessionStateSection) ConfigurationManager.GetSection("system.web/sessionState")); }
-            set { _sessionStateConfig = value; }
+            get { return sessionStateConfig ?? (sessionStateConfig = (SessionStateSection) ConfigurationManager.GetSection("system.web/sessionState")); }
+            set { sessionStateConfig = value; }
         }
 
-        public override void Initialize(string name, System.Collections.Specialized.NameValueCollection config)
+        public IHostingProvider HostingProvider
+        {
+            get { return hostingProvider; }
+            set { hostingProvider = value; }
+        }
+
+        public override void Initialize(string name, NameValueCollection config)
         {
             Initialize(name, config, null);
         }
 
-        internal void Initialize(string name, System.Collections.Specialized.NameValueCollection config,
+        internal void Initialize(string name, NameValueCollection config,
             IDocumentStore documentStore)
         {
             
             try
             {
-                if (config == null)
-                    throw new ArgumentNullException("config");
+                CheckConfigIsValid(config);
+                this.configuration = config;
 
                 Logger.Debug("Beginning Initialize. Name= {0}. Config={1}.", 
-                    name, config.AllKeys.Aggregate("", (aggregate, next) => aggregate + next + ":" + config[next]));
+                    name, this.configuration.AllKeys.Aggregate("", (aggregate, next) => aggregate + next + ":" + this.configuration[next]));
            
-               
-                if (string.IsNullOrEmpty(name))
-                    name = "RavenSessionStateStore";
+                name = GetSessionStoreName(name);
 
-                base.Initialize(name, config);
-
-                if (string.IsNullOrEmpty(ApplicationName))
-                    ApplicationName = System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath;
+                base.Initialize(name, this.configuration);
+                SetApplicationName();
                 
                 if (documentStore != null)
-                    _documentStore = documentStore;
+                    this.documentStore = documentStore;
 
-                if (_documentStore == null)
+                if (this.DocumentStore == null)
                 {
-                    if (string.IsNullOrEmpty(config["connectionStringName"]))
-                        throw new ConfigurationErrorsException("Must supply a connectionStringName.");
-
-                    _documentStore = new DocumentStore
-                                         {
-                                             ConnectionStringName = config["connectionStringName"],
-                                             Conventions = { JsonContractResolver = new PrivatePropertySetterResolver()},
-                                         };
-
-                    _documentStore.Initialize();
-
+                    CheckConnectionStringIsValid();
+                    CreateAndInitializeDocumentStore();
                 }
 
                 Logger.Debug("Completed Initalize.");
@@ -101,13 +117,58 @@ namespace Raven.AspNet.SessionState
             }
             catch(Exception ex)
             {
-                Logger.ErrorException("Error while initializing.", ex);
+                LogInitializationError(ex);
                 throw;
             }
         }
 
+        private static void CheckConfigIsValid(NameValueCollection config)
+        {
+            if (config == null)
+                throw new ArgumentNullException("config");
+        }
 
-       
+        private static string GetSessionStoreName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                name = "RavenSessionStateStore";
+            return name;
+        }
+
+        private void SetApplicationName()
+        {
+            if (string.IsNullOrWhiteSpace(configuration["applicationName"]))
+            {
+                ApplicationName = HostingProvider.ApplicationVirtualPath;
+            }
+            else
+            {
+                ApplicationName = configuration["applicationName"];
+            }
+        }
+
+        private void CheckConnectionStringIsValid()
+        {
+            if (string.IsNullOrEmpty(configuration["connectionStringName"]))
+                throw new ConfigurationErrorsException("Must supply a connectionStringName.");
+        }
+
+        private void CreateAndInitializeDocumentStore()
+        {
+            documentStore = new DocumentStore
+            {
+                ConnectionStringName = configuration["connectionStringName"],
+                Conventions = { JsonContractResolver = new PrivatePropertySetterResolver() },
+            };
+
+            DocumentStore.Initialize();
+        }
+
+        private static void LogInitializationError(Exception ex)
+        {
+            Logger.ErrorException("Error while initializing.", ex);
+        }
+
         /// <summary>
         /// Retrieves session values and information from the session data store and locks the session-item data 
         /// at the data store for the duration of the request. 
@@ -210,7 +271,7 @@ namespace Raven.AspNet.SessionState
 
                 var serializedItems = Serialize((SessionStateItemCollection) item.Items);
 
-                using (var documentSession = _documentStore.OpenSession())
+                using (var documentSession = DocumentStore.OpenSession())
                 {
                     //don't tolerate stale data
                     documentSession.Advanced.AllowNonAuthoritativeInformation = false;
@@ -272,7 +333,7 @@ namespace Raven.AspNet.SessionState
             {
                 Logger.Debug("Beginning ReleaseItemExclusive. SessionId={0}; Application={1}; LockId={2}.", sessionId, ApplicationName, lockId);
 
-                using (var documentSession = _documentStore.OpenSession())
+                using (var documentSession = DocumentStore.OpenSession())
                 {
                     //don't tolerate stale data
                     documentSession.Advanced.AllowNonAuthoritativeInformation = false;
@@ -327,7 +388,7 @@ namespace Raven.AspNet.SessionState
                 Logger.Debug("Beginning RemoveItem. SessionId={0}; Application={1}; lockId={2}.", sessionId,
                     ApplicationName, lockId);
 
-                using (var documentSession = _documentStore.OpenSession())
+                using (var documentSession = DocumentStore.OpenSession())
                 {
                     //don't tolerate stale data
                     documentSession.Advanced.AllowNonAuthoritativeInformation = false;
@@ -365,7 +426,7 @@ namespace Raven.AspNet.SessionState
                 Logger.Debug("Beginning ResetItemTimeout. SessionId={0}; Application={1}.", sessionId, ApplicationName);
 
 
-                using (var documentSession = _documentStore.OpenSession())
+                using (var documentSession = DocumentStore.OpenSession())
                 {
                     //we never want to over-write data with this method
                     documentSession.Advanced.UseOptimisticConcurrency = true;
@@ -411,7 +472,7 @@ namespace Raven.AspNet.SessionState
             {
                 Logger.Debug("Beginning CreateUninitializedItem. SessionId={0}; Application={1}; timeout={1}.", sessionId, ApplicationName, timeout);
 
-                using (var documentSession = _documentStore.OpenSession())
+                using (var documentSession = DocumentStore.OpenSession())
                 {
                     var expiry = DateTime.UtcNow.AddMinutes(timeout);
 
@@ -484,8 +545,8 @@ namespace Raven.AspNet.SessionState
         {
             try
             {
-                if (_documentStore != null)
-                    _documentStore.Dispose();
+                if (DocumentStore != null)
+                    DocumentStore.Dispose();
             }
             catch(Exception ex)
             {
@@ -515,7 +576,7 @@ namespace Raven.AspNet.SessionState
             locked = false;
             actionFlags = 0;
 
-            using (var documentSession = _documentStore.OpenSession())
+            using (var documentSession = DocumentStore.OpenSession())
             {
                 //don't tolerate stale data
                 documentSession.Advanced.AllowNonAuthoritativeInformation = false;

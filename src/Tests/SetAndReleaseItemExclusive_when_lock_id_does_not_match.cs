@@ -32,15 +32,18 @@ namespace Tests
             }
         }
 
-        protected override SessionStateDocument PreExistingSessionState()
+        protected override SessionStateDocument PreExistingSessionStateDocument
         {
-            return new SessionStateDocument(SessionId, ApplicationName)
+            get
+            {
+                return new SessionStateDocument(SessionId, ApplicationName)
                 {
                     Locked = true,
                     LockId = 4,
                     SessionItems = Subject.Serialize(Items),
                     Expiry = DateTime.UtcNow.AddMinutes(10)
-                }; 
+                };
+            }
         }
 
         [Fact]
@@ -52,13 +55,13 @@ namespace Tests
         [Fact]
         public void lock_id_is_not_modified()
         {
-            Assert.Equal(PreExistingSessionState().LockId, PersistedSessionStateDocument.LockId);
+            Assert.Equal(PreExistingSessionStateDocument.LockId, PersistedSessionStateDocument.LockId);
         }
 
         [Fact]
         public void data_is_not_modified()
         {
-          Assert.Equal(PreExistingSessionState().SessionItems, PersistedSessionStateDocument.SessionItems );  
+          Assert.Equal(PreExistingSessionStateDocument.SessionItems, PersistedSessionStateDocument.SessionItems );  
         }
 
     }

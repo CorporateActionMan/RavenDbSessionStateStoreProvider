@@ -4,25 +4,19 @@ using Raven.AspNet.SessionState;
 
 namespace Tests
 {
+    using Moq;
+    using Raven.Json.Linq;
+
     public abstract class SetAndReleaseItemExclusiveTest : RavenSessionStateTest
     {
         protected SetAndReleaseItemExclusiveTest()
         {
             Subject.SetAndReleaseItemExclusive(null, SessionId, new SessionStateStoreData(Items, new HttpStaticObjectsCollection(), (int)Timeout.TotalMinutes ), LockId, NewItem);
-
-            using (var session = DocumentStore.OpenSession())
-            {
-                PersistedSessionStateDocument = session.Load<SessionStateDocument>(SessionStateDocument.GenerateDocumentId(SessionId, ApplicationName));
-            }
         }
 
         protected abstract string SessionId { get; }
         protected abstract int LockId { get; }
         protected abstract bool NewItem { get; }
         protected abstract SessionStateItemCollection Items { get; }
-
-        protected SessionStateDocument PersistedSessionStateDocument { get; set; }
-
-
     }
 }

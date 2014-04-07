@@ -34,6 +34,11 @@ namespace Raven.AspNet.SessionState
         [JsonIgnore]
         public bool IsExpired { get { return DateTime.UtcNow > Expiry; } }
 
+        public SessionStateDocument ShallowCopy()
+        {
+            return (SessionStateDocument)MemberwiseClone();
+        }
+
 
     }
 }

@@ -45,18 +45,21 @@ namespace Tests
             get { return "BLAHBLAHBLAH"; }
         }
 
-        protected override SessionStateDocument PreExistingSessionState()
+        protected override SessionStateDocument PreExistingSessionStateDocument
         {
-            var items = new SessionStateItemCollection();
-            items["Name"] = "Roger Ramjet";
+            get
+            {
+                var items = new SessionStateItemCollection();
+                items["Name"] = "Roger Ramjet";
 
-            return new SessionStateDocument(SessionId, ApplicationName)
+                return new SessionStateDocument(SessionId, ApplicationName)
                 {
                     Locked = false,
                     LockId = 3,
                     SessionItems = Subject.Serialize(items),
                     Expiry = DateTime.UtcNow.AddMinutes(8)
-                }; 
+                };
+            }
         }
 
         [Fact]
