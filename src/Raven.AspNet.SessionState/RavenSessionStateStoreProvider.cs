@@ -409,7 +409,8 @@ namespace Raven.AspNet.SessionState
             }
             catch (Exception ex)
             {
-                Logger.ErrorException(string.Format("Error during RemoveItem. SessionId={0}; Application={1}; lockId={2}", sessionId, ApplicationName, lockId), ex);
+                Logger.ErrorException(string.Format("Error during RemoveItem. SessionId={0}; Application={1}; lockId={2}", sessionId, ApplicationName, lockId), 
+                    ex);
                 throw;
             }
         }

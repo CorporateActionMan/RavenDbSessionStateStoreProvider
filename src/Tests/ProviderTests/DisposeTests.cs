@@ -18,20 +18,36 @@ namespace Tests.ProviderTests
         public void DocumentStoreIsDisposedWhenItExists()
         {
             // Arrange
-            string expectedAppName = "You are everything ... to me";
-            string appPath = "Application path";
+            const string expectedAppName = "Heath Robinson's Atom Splitter";
+            const string appPath = "An arbitrary application path";
             var subject = TestStoreProviderFactory.SetupStoreProvider(appPath, MockHostingProvider);
-            NameValueCollection keyPairs = new NameValueCollection();
+            var keyPairs = new NameValueCollection();
             keyPairs.Set("applicationName", expectedAppName);
 
+            MockDocumentStore.Setup(cmd => cmd.Dispose()).Verifiable();
 
-            subject.Initialize("A name", keyPairs, MockDocumentStore.Object);
+            subject.Initialize("An arbitrary session store name", keyPairs, MockDocumentStore.Object);
 
             // Act
             subject.Dispose();
 
             // Assert
             MockDocumentStore.Verify(cmd => cmd.Dispose(), Times.Once());
+        }
+
+        [Test]
+        public void DocumentStoreIsNotDisposedWhenItDoesntExist()
+        {
+            // Arrange
+            var subject = new RavenSessionStateStoreProvider();
+
+            MockDocumentStore.Setup(cmd => cmd.Dispose()).Verifiable();
+
+            // Act
+            subject.Dispose();
+
+            // Assert
+            MockDocumentStore.Verify(cmd => cmd.Dispose(), Times.Never());
         }
     }
 }

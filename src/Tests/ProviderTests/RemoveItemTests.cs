@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Tests.ProviderTests
 {
@@ -51,6 +48,7 @@ namespace Tests.ProviderTests
             subject.RemoveItem(new HttpContext(new SimpleWorkerRequest("", "", "", "", new StringWriter())), providedSessionId, lockId, item);
 
             // Assert
+            MockDocumentStore.Verify(cmd => cmd.OpenSession(), Times.Once());
             MockDocumentSession.Verify(
                 cmd =>
                     cmd.Load<SessionStateDocument>(SessionStateDocument.GenerateDocumentId(providedSessionId,
@@ -93,6 +91,7 @@ namespace Tests.ProviderTests
             subject.RemoveItem(new HttpContext(new SimpleWorkerRequest("", "", "", "", new StringWriter())), providedSessionId, lockId, item);
 
             // Assert
+            MockDocumentStore.Verify(cmd => cmd.OpenSession(), Times.Once());
             MockDocumentSession.Verify(
                 cmd =>
                     cmd.Load<SessionStateDocument>(SessionStateDocument.GenerateDocumentId(providedSessionId,
@@ -135,6 +134,7 @@ namespace Tests.ProviderTests
             subject.RemoveItem(new HttpContext(new SimpleWorkerRequest("", "", "", "", new StringWriter())), providedSessionId, lockId, item);
 
             // Assert
+            MockDocumentStore.Verify(cmd => cmd.OpenSession(), Times.Once());
             MockDocumentSession.Verify(
                 cmd =>
                     cmd.Load<SessionStateDocument>(SessionStateDocument.GenerateDocumentId(providedSessionId,
@@ -177,6 +177,7 @@ namespace Tests.ProviderTests
             subject.RemoveItem(new HttpContext(new SimpleWorkerRequest("", "", "", "", new StringWriter())), providedSessionId, lockId, item);
 
             // Assert
+            MockDocumentStore.Verify(cmd => cmd.OpenSession(), Times.Once());
             MockDocumentSession.Verify(
                 cmd =>
                     cmd.Load<SessionStateDocument>(SessionStateDocument.GenerateDocumentId(providedSessionId,
