@@ -20,7 +20,8 @@ namespace Tests
             ravenJObject.Add("Raven-Expiration-Date", null);
             MockSyncAdvancedSessionOperation.Setup(cmd => cmd.GetMetadataFor(It.IsAny<SessionStateDocument>()))
                 .Returns(ravenJObject);
-            //call ReleaseItemExclusive with matching lockId  
+            //call ReleaseItemExclusive with matching lockId
+            Subject.ApplicationName = ApplicationName;
            Subject.ReleaseItemExclusive(null, SessionId, LockIdExisting);
            ExpiryExisting = DateTime.UtcNow;
         }

@@ -13,6 +13,7 @@ namespace Tests
 
         public SetAndRelease_and_ResetItemTimeout_called_concurrently()
         {
+            Subject.ApplicationName = ApplicationName;
             var modifyTask = Task.Factory.StartNew(() =>
             {
                 for (int i = 0; i < Iterations; i++)

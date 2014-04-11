@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Web.SessionState;
-using Raven.AspNet.SessionState;
 
 namespace Tests
 {
-    using Moq;
-    using Raven.Client;
+    using System.Web.Configuration;
+    using Utilities;
 
     public abstract class GetItemExclusiveTest : RavenSessionStateTest
     {
         protected GetItemExclusiveTest()
         {
+            ConfigurationService.SetEnableSessionState(PagesEnableSessionState.True);
             bool locked;
             TimeSpan lockAge;
             object lockId;

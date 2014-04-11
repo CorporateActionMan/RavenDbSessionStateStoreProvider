@@ -11,7 +11,14 @@ namespace Tests
     {
         protected SetAndReleaseItemExclusiveTest()
         {
+            Subject.ApplicationName = ApplicationName;
             Subject.SetAndReleaseItemExclusive(null, SessionId, new SessionStateStoreData(Items, new HttpStaticObjectsCollection(), (int)Timeout.TotalMinutes ), LockId, NewItem);
+        }
+
+        protected SetAndReleaseItemExclusiveTest(string applicationName)
+        {
+            Subject.ApplicationName = applicationName;
+            Subject.SetAndReleaseItemExclusive(null, SessionId, new SessionStateStoreData(Items, new HttpStaticObjectsCollection(), (int)Timeout.TotalMinutes), LockId, NewItem);
         }
 
         protected abstract string SessionId { get; }

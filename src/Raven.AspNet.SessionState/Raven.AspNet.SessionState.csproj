@@ -59,10 +59,13 @@
   <ItemGroup>
     <Compile Include="Infrastructure\PrivatePropertySetterResolver.cs" />
     <Compile Include="Interfaces\IHostingProvider.cs" />
+    <Compile Include="Interfaces\ISessionStateUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\CustomHostingProvider.cs" />
+    <Compile Include="Providers\TimeProviderBase.cs" />
     <Compile Include="RavenSessionStateStoreProvider.cs" />
     <Compile Include="SessionStateDocument.cs" />
+    <Compile Include="Utilities\CustomSessionStateUtility.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
